@@ -1,2 +1,2 @@
 # TicTacToe
-Don't work now. XD
+Work now. XD
