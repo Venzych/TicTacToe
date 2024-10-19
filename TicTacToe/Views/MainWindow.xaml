@@ -7,7 +7,9 @@
         mc:Ignorable="d"
         xmlns:prism="http://prismlibrary.com/"
         prism:ViewModelLocator.AutoWireViewModel="True"
-        Title="MainWindow" Height="450" Width="800">
+        Title="TicTacToe" Height="338"
+        WindowStartupLocation="CenterScreen"
+        Width="315">
     <Grid>
         <ItemsControl ItemsSource="{Binding AllCells}">
             <ItemsControl.ItemTemplate>

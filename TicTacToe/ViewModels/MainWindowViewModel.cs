@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Prism.Mvvm;
 using System.Windows;
 using TicTacToe.Models;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace TicTacToe.ViewModels
 {
@@ -34,15 +31,20 @@ namespace TicTacToe.ViewModels
                 var newRow = new List<CellBtnVM>();
                 for (int column = 0; column < _cellRowColumnCount; column++)
                 {
-                    var newCell = new CellBtnVM(row, column, CheckGAmeStatus);
+                    var newCell = new CellBtnVM(row, column, CheckGameStatus);
                     newRow.Add(newCell);
                 }
                 AllCells.Add(newRow);
             }
         }
 
-        private void CheckGAmeStatus(CellBtnVM lastClickBtn)
+        private void CheckGameStatus(CellBtnVM lastClickBtn)
         {
+            if (AllCells.SelectMany(x => x.Where(c => c.Status == CellStatus.Empty)).Count() == 0)
+            {
+                StopGame();
+                return;
+            }
             //first check #Horizontal chech
             var columnCheck = new List<CellBtnVM>();
             for (int i = 0; i <= _cellRowColumnCount / 2; i++)
@@ -82,56 +84,83 @@ namespace TicTacToe.ViewModels
                 return;
             }
             //before diagonal check
+            bool checkByDiagonal = true;
             int checkCross = Math.Abs(lastClickBtn.Column - lastClickBtn.Row);
-            if (checkCross != 0 && checkCross != _cellRowColumnCount - 1) return;
+            if (checkCross != 0 && checkCross != _cellRowColumnCount - 1)
+            {
+                checkByDiagonal = false;
+            }
 
             //third check #Diagonal chech
-            var crossMainCheck = new List<CellBtnVM>();
-            for (int i = 0; i <= _cellRowColumnCount / 2; i++)
+            if (checkByDiagonal &&
+                !(lastClickBtn.Row == 0 && lastClickBtn.Column == _cellRowColumnCount - 1) &&
+                !(lastClickBtn.Row == _cellRowColumnCount - 1 && lastClickBtn.Column == 0)
+                )
             {
-                int column = lastClickBtn.Column + 1 + i;
-                int row = lastClickBtn.Row + 1 + i;
-                if (column < _cellRowColumnCount)
+                var crossMainCheck = new List<CellBtnVM>();
+                for (int i = 0; i <= _cellRowColumnCount / 2; i++)
                 {
-                    crossMainCheck.Add(AllCells[row][column]);
+                    int column = lastClickBtn.Column + 1 + i;
+                    int row = lastClickBtn.Row + 1 + i;
+                    if (column < _cellRowColumnCount)
+                    {
+                        crossMainCheck.Add(AllCells[row][column]);
+                    }
+                    else
+                    {
+                        crossMainCheck.Add(AllCells[row - _cellRowColumnCount][column - _cellRowColumnCount]);
+                    }
                 }
-                else
+                if (crossMainCheck.All(x => x.Status == lastClickBtn.Status))
                 {
-                    crossMainCheck.Add(AllCells[row - _cellRowColumnCount][column - _cellRowColumnCount]);
+                    StopGame(lastClickBtn.Status);
+                    return;
                 }
             }
-            if (crossMainCheck.All(x => x.Status == lastClickBtn.Status))
-            {
-                StopGame(lastClickBtn.Status);
-                return;
-            }
+
             //4th check #Diagonal chech
-            var crossSecondCheck = new List<CellBtnVM>();
-            for (int i = 0; i <= _cellRowColumnCount / 2; i++)
+            if (checkByDiagonal)
             {
-                int column = lastClickBtn.Column + 1 + i;
-                int row = lastClickBtn.Row + 1 - i;
-                if (column < _cellRowColumnCount)
+                var crossSecondCheck = new List<CellBtnVM>();
+                for (int i = 0; i <= _cellRowColumnCount / 2; i++)
                 {
+                    int column = lastClickBtn.Column + 1 + i;
+                    int row = lastClickBtn.Row - (1 + i);
+                    if (row < 0)
+                    {
+                        row = row + _cellRowColumnCount;
+                    }
+                    if (column >= _cellRowColumnCount)
+                    {
+                        column = column - _cellRowColumnCount;
+                    }
+
                     crossSecondCheck.Add(AllCells[row][column]);
                 }
-                else
+
+                if (crossSecondCheck.All(x => x.Status == lastClickBtn.Status))
                 {
-                    crossSecondCheck.Add(AllCells[row + _cellRowColumnCount][column - _cellRowColumnCount]);
+                    StopGame(lastClickBtn.Status);
+                    return;
                 }
             }
-            if (crossSecondCheck.All(x => x.Status == lastClickBtn.Status))
-            {
-                StopGame(lastClickBtn.Status);
-                return;
-            }
+
 
             CurrentPlayerStatus = lastClickBtn.Status == CellStatus.Cross ? CellStatus.Circle : CellStatus.Cross;
         }
-
+        private void StopGame()
+        {
+            MessageBox.Show("Without Winner");
+            Reset();
+        }
         private void StopGame(CellStatus winnerStatus)
         {
             MessageBox.Show($"Winner: {winnerStatus}");
+            Reset();
+
+        }
+        private void Reset()
+        {
             foreach (var row in AllCells)
             {
                 foreach (var cell in row)
@@ -139,7 +168,6 @@ namespace TicTacToe.ViewModels
                     cell.Status = CellStatus.Empty;
                 }
             }
-
         }
     }
 }
